@@ -1,0 +1,1 @@
+export const OPEN_TRIP_MAP_API_KEY = '5ae2e3f221c38a28845f05b690ec37a1399a2b1a7bba44c400805de7';

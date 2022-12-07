@@ -1,0 +1,54 @@
+html, body, #app {
+    height: 100%;
+    overflow: auto;
+}
+
+body {
+    background-color: white;
+    padding-bottom: 3em;
+}
+
+#app::-webkit-scrollbar-track {
+    display: none;
+}
+    
+#app::-webkit-scrollbar-thumb {
+    display: none;
+}
+
+#app::-webkit-scrollbar {
+    width:0;
+    height: 0;
+}
+
+#div_descr{
+    margin: auto;
+    width: 50%;
+    padding: 1em;
+    padding-top: 3em;
+}
+
+#div_search {
+    padding-top: 3em !important;
+}
+
+.router-link-active > a {
+    color: #4f93bb !important;
+    font-weight: 600;
+}
+
+
+#div_kinds{
+    column-count: 2;
+}
+
+.response {
+    font-weight: 700;
+}
+
+#next_button {
+    margin: 2em;
+    float: right;
+}
+
+
