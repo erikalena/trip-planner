@@ -1,2 +1,3 @@
-# friends-library
-A cloud based environment to exchange book between a group of friends.
+# Trip Planner
+
+A cloud based environment to plan which Points of Interest to see during a voyage.
