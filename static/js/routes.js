@@ -21,6 +21,15 @@ const router = VueRouter.createRouter({
   routes, // short for `routes: routes`
 })
 
+router.beforeEach((to, from, next) => {
+  if(to.path == '/') {
+      $('#stylesheetComp').attr('href', '/static/css/index.css');
+  } else {
+      $('#stylesheetComp').attr('href','/static/css/explore.css');
+  }
+  next();
+})
+
 // Create and mount the root instance
 const app = Vue.createApp({})
 

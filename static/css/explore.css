@@ -4,10 +4,8 @@ html, body, #app {
 }
 
 body {
-    background-color: white;
+    background-color: aliceblue;
     padding-bottom: 3em;
-    background-image: url('../img/Old-world-map.jpg');
-    background-position: center;
 }
 
 #app::-webkit-scrollbar-track {

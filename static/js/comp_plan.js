@@ -15,7 +15,7 @@ let count; // total objects count
 export default {
     name: 'main',
     template: `
-    <div id="div_search" class="container">
+    <div id="div_display" class="container">
         <form id="search_form" class="input-group mb-4 border p-1" >
             <div class="input-group-prepend border-0">
                 <button id="button-search" type="submit" class="btn btn-link ">
@@ -147,29 +147,81 @@ export default {
                     message = data.name + ", " + getCountryName(data.country);
                     lon = data.lon;
                     lat = data.lat;
-                    module.firstLoad(module,lon, lat);
+                    module.firstLoad(module,lon,lat);
                 }
                 document.getElementById("info").innerHTML = `<p>${message}</p>`;
             });
         },
 
+        add_days(days) {
+            for (var i = 0; i < days; i += 1) {
+                let div_day = $(`
+                    <div class="div_days" id="div_days_${i}" >
+                        <h2 class="div_days_title"> Day ${i+1} </h2>
+                    </div>
+                `);
+                $("#div_display").append(div_day);
+            } 
+        },
+
+        plan(data, days) {
+            jQuery.fn.sort = function() {  
+                return this.pushStack( [].sort.apply( this, arguments ), []);  
+            } 
+            
+            function sortRate(a,b){  
+                if (a.rate == b.rate){
+                return 0;
+                }
+                return a.rate > b.rate ? -1 : 1;  
+            }
+            
+            // select the best places for each day
+            let sorted = $(data).sort(sortRate); 
+            let per_day = 5;
+            let chosen = sorted.slice(0, days*per_day);
+
+            $("#div_display").empty();
+
+            this.add_days(days);
+
+            for (var i = 0; i < days*per_day; i += 1) {
+                let item = chosen[i];          
+
+                let place = $(`
+                    <div class="places">
+                        <p class="name_places" style="font-weight:bold"> ${item.name} </p>
+                        <p class="description"> ${getCategoryName(item.kinds)} </p>
+                    </div>
+                `);
+
+                let index = Math.floor(i/per_day);
+                $(`#div_days_${index}`).append(place);
+            }
+
+        },
 
         submit() {
-            console.log('here');
+            
+            let days = document.getElementById("days").value;
+            let method = "radius";
+            let apiKey = '5ae2e3f221c38a28845f05b690ec37a1399a2b1a7bba44c400805de7';
+            let query = `radius=1000&limit=1000&offset=5&lon=${lon}&lat=${lat}&rate=2&format=json`
+            var url = "https://api.opentripmap.com/0.1/en/places/" + method + "?apikey=" + apiKey + "&" + query;
+            var module = this;
+
             $.ajax({
-                type: "POST",
-                enctype: 'multipart/form-data',
-                url: "/src/plan?",
-                data: data,
-                processData: false,
-                contentType: false,
+                type: "GET",
+                dataType: "json",
                 cache: false,
+                url: url,
                 success: (data) =>{
-                    console.log("success");
-                    console.log(data);
+                    // fill form with json's fields
+                    //this.showData(data);
+                    module.plan(data, days);
                 },
                 error: function (e) {
-                    console.log("error");
+                    console.log("error in get story", e);
                 }
             });
         }

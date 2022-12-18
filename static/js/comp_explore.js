@@ -14,7 +14,7 @@ let count; // total objects count
 export default {
     name: 'main',
     template: `
-    <div id="div_search" class="container">
+    <div id="div_display" class="container">
         <form id="search_form" class="input-group mb-4 border p-1" >
             <div class="input-group-prepend border-0">
                 <button id="button-search" type="submit" class="btn btn-link ">
@@ -43,7 +43,7 @@ export default {
             </div>
         </div>
     </div>
-
+    <link rel="stylesheet" href="static/css/explore.css">
     `,
     methods: {
         apiGet(method, query) {
