@@ -21,7 +21,7 @@ export default {
                     <i class="fa fa-search"></i>
                 </button>
             </div>
-            <input id="textbox"  type="search" placeholder="Region, city, village, etc. (e.g. Moscow)"
+            <input id="textbox"  type="search" placeholder="Region, city, village, etc. (e.g. Rome)"
                 aria-describedby="button-search"
                 class="form-control bg-none border-0"
                 @change="submitForm"
@@ -39,11 +39,24 @@ export default {
                 </nav>
             </div>
             <div class="col-12 col-lg-7">
-                <div id="poi" class="alert"></div>
+                <div id="poi" class="alert" style="visibility: hidden;"></div>
             </div>
         </div>
     </div>
-    <link rel="stylesheet" href="static/css/explore.css">
+
+    <!-- modal for visualizing json -->
+    <div class="modal fade" id="showjsonModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body" id="jsonModal"></div>
+            </div>
+        </div>
+    </div>
+
+
     `,
     methods: {
         apiGet(method, query) {
@@ -64,22 +77,97 @@ export default {
                     });
             });
         },
-        
-        
-        
+        getMeta(url, data) {   
+            var img = new Image();
+            img.onload = function() {
+                let poi = document.getElementById("poi");
+                poi.innerHTML = "";
+
+                poi.innerHTML += `<p class="opentrip_link"><a target="_blank" href="${data.otm}">Show more at OpenTripMap</a></p><button type="button" class="btn_showjson" data-toggle="modal" data-target="#showjsonModal" >Check data</button><br>`;
+
+                let content = `<div class='poi_content'>`;
+                alert( this.width +" "+ this.height );
+                let gt = this.width > this.height + 50;
+                console.log(gt);
+                if (data.preview && gt)  {
+                    content += `<img id="content_img" src="${data.preview.source}" style="width=100% !important;" >`;
+                }
+                else if (data.preview) {
+                    content += `<img id="content_img" src="${data.preview.source}" >`;
+                }
+
+                content += data.wikipedia_extracts
+                    ? data.wikipedia_extracts.html
+                    : data.info
+                        ? data.info.descr
+                        : "No description";
+
+                content += `</div>`;
+                poi.innerHTML += content;
+
+                if (gt) {
+                    $(".poi_content > p").css("width","100%");
+                }
+            };
+            
+            img.src = url;
+
+        },
+        load_image(data, poi) {
+            // check img dimensions and change width of image and description
+            var img = new Image();
+            img.onload = function() {
+                let content = `<div class='poi_content'>`;
+                let gt = this.width > this.height + 50 ;
+              
+                content += `<img id="content_img" src="${data.preview.source}" >`;
+
+                content += data.wikipedia_extracts
+                    ? data.wikipedia_extracts.html
+                    : data.info
+                        ? data.info.descr
+                        : "No description";
+
+                content += `</div>`;
+                poi.innerHTML += content;
+
+                if (gt) {
+                    $(".poi_content > img").css("width","100%");
+                    $(".poi_content > p").css("width","100%");
+                }
+            };
+            img.src = data.preview.source;
+        },
         onShowPOI(data) {
             let poi = document.getElementById("poi");
             poi.innerHTML = "";
+            poi.style.visibility = "visible";
+
+            poi.innerHTML += `<p class="opentrip_link"><a target="_blank" href="${data.otm}">Show more at OpenTripMap</a></p><button type="button" class="btn_showjson" data-toggle="modal" data-target="#showjsonModal" >Check data</button><br>`;
+
             if (data.preview) {
-                poi.innerHTML += `<img src="${data.preview.source}">`;
+                this.load_image(data, poi);
             }
-            poi.innerHTML += data.wikipedia_extracts
-                ? data.wikipedia_extracts.html
-                : data.info
-                    ? data.info.descr
-                    : "No description";
-        
-            poi.innerHTML += `<p><a target="_blank" href="${data.otm}">Show more at OpenTripMap</a></p>`;
+            else {
+                let content = `<div class='poi_content'>`;
+
+                content += data.wikipedia_extracts
+                    ? data.wikipedia_extracts.html
+                    : data.info
+                        ? data.info.descr
+                        : "No description";
+
+                content += `</div>`;
+                poi.innerHTML += content;
+                $(".poi_content > p").css("width","100%");
+            }
+            
+            $("#showjsonModal").on("shown.bs.modal", function () {
+                let text = JSON.stringify(data, null, 2);
+                text = text.replace(/\n/g,"<br />");
+                $("#jsonModal").html(text);
+            });
+
         },
 
         createListItem(module,item) {
@@ -105,6 +193,7 @@ export default {
                 "radius",
                 `radius=1000&limit=${pageLength}&offset=${offset}&lon=${lon}&lat=${lat}&rate=2&format=json`
             ).then(function (data) {
+                console.log(data);
                 let list = document.getElementById("list");
                 list.innerHTML = "";
                 data.forEach(item => list.appendChild(module.createListItem(module,item)));

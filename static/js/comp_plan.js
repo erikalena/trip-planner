@@ -15,7 +15,9 @@ let count; // total objects count
 export default {
     name: 'main',
     template: `
+
     <div id="div_display" class="container">
+    <p   style="font-weight: 600;"> Search for your place of interest, then you will be asked some really simple information to build your trip plan. </p>
         <form id="search_form" class="input-group mb-4 border p-1" >
             <div class="input-group-prepend border-0">
                 <button id="button-search" type="submit" class="btn btn-link ">
@@ -164,7 +166,17 @@ export default {
             } 
         },
 
-        plan(data, days) {
+        plan(data, days, checked) {
+            // remove the places that are not checked
+            for (var i = 0; i < data.length; i += 1) {
+                let item = data[i];
+                let kind = getCategoryName(item.kinds);
+                if(!checked.includes(kind)) {
+                    data.splice(i, 1);
+                    i -= 1;
+                }
+            }
+
             jQuery.fn.sort = function() {  
                 return this.pushStack( [].sort.apply( this, arguments ), []);  
             } 
@@ -175,8 +187,7 @@ export default {
                 }
                 return a.rate > b.rate ? -1 : 1;  
             }
-            
-            // select the best places for each day
+            // select the best places for each day based on the rate
             let sorted = $(data).sort(sortRate); 
             let per_day = 5;
             let chosen = sorted.slice(0, days*per_day);
@@ -205,20 +216,25 @@ export default {
             
             let days = document.getElementById("days").value;
             let method = "radius";
-            let apiKey = '5ae2e3f221c38a28845f05b690ec37a1399a2b1a7bba44c400805de7';
             let query = `radius=1000&limit=1000&offset=5&lon=${lon}&lat=${lat}&rate=2&format=json`
             var url = "https://api.opentripmap.com/0.1/en/places/" + method + "?apikey=" + apiKey + "&" + query;
             var module = this;
 
+            let checked = []
+            var checkboxes = document.querySelectorAll('input[type=checkbox]:checked')
+
+            for (var i = 0; i < checkboxes.length; i++) {
+            checked.push(checkboxes[i].value)
+            }
+            
+            console.log(checked);
             $.ajax({
                 type: "GET",
                 dataType: "json",
                 cache: false,
                 url: url,
                 success: (data) =>{
-                    // fill form with json's fields
-                    //this.showData(data);
-                    module.plan(data, days);
+                    module.plan(data, days, checked);
                 },
                 error: function (e) {
                     console.log("error in get story", e);

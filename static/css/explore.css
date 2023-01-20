@@ -4,7 +4,7 @@ html, body, #app {
 }
 
 body {
-    background-color: aliceblue;
+    background-color: white;
     padding-bottom: 3em;
 }
 
@@ -77,6 +77,10 @@ body {
     column-count: 2;
 }
 
+#div_kinds > label {
+    padding-left: 1rem;
+}
+
 .response {
     font-weight: 700;
 }
@@ -99,7 +103,81 @@ body {
 
 .div_days {
     padding: 1em;
-    background-color: #dbf8f3;
+    background-color: #f7deca;
     border-radius: 25px;
     margin: 1em;
 }
+
+
+
+.list-group-item.active {
+    z-index: 2;
+    color: #fff;
+    background-color: #e1f0ff;
+    border-color: #95b0cc;
+}
+
+
+
+.opentrip_link{
+    float: left;
+    padding-right: 1em;
+}
+
+.btn_showjson{
+    border: none;
+    background-color: transparent;
+    color: #2b79e2;
+}
+
+.modal-content {
+    overflow: auto;
+}
+
+.modal-dialog {
+    width: 70% !important;
+}
+
+.modal-dialog::-webkit-scrollbar-track {
+    display: none;
+}
+    
+.modal-dialog::-webkit-scrollbar-thumb {
+    display: none;
+}
+
+.modal-dialog::-webkit-scrollbar {
+    width:0;
+    height: 0;
+}
+
+@media screen and (min-width: 576px) {
+
+    .modal-dialog {
+        max-width: 100%;
+        margin: 1.75rem auto;
+    }
+}
+
+#poi {
+    background-color: #cce5ff;
+    overflow: auto;
+}
+
+.poi_content {
+    padding-top: 1rem;
+}
+
+.poi_content > img {
+    float: right;
+    border-radius: 15px;
+    width: 50%;
+}
+
+
+.poi_content > p {
+    display: inline-block;
+    width: 46%;
+    padding-top: 1rem;
+}
+
