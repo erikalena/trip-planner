@@ -109,15 +109,23 @@ body {
 }
 
 
-
-.list-group-item.active {
-    z-index: 2;
-    color: #fff;
-    background-color: #e1f0ff;
+.list-group-item{
+    background-color: #e6f2ff;
+    color: #2b79e2;
     border-color: #95b0cc;
 }
 
+.list-group-item.active {
+    z-index: 2;
+    color: rgb(74, 48, 120);
+    background-color: #e1f0ff;
+    border-color: #95b0cc ! important;
+}
 
+.list-group-item.active:hover {
+    background-color: #e1f0ff;
+    border-color: #95b0cc;
+}
 
 .opentrip_link{
     float: left;
@@ -181,3 +189,6 @@ body {
     padding-top: 1rem;
 }
 
+#jsonModal > img {
+    padding: 10px;
+}

@@ -1,16 +1,8 @@
-//You should get your API key at https://opentripmap.io
-import { OPEN_TRIP_MAP_API_KEY } from '/static/js/config.js';
-const apiKey = OPEN_TRIP_MAP_API_KEY;
-
-const pageLength = 1000; // number of objects per page, set an high number, we essentially want them all
-
-let lon; // place longitude
-let lat; // place latitude
-
-let offset = 0; // offset from first object in the list
-let count; // total objects count
+import cityCodes from '/static/data/cityCode.json' assert {type: 'json'};
 
 
+var data ;
+var days ;
 
 export default {
     name: 'main',
@@ -35,53 +27,108 @@ export default {
 
         <div id="div_options" ></div>
         
-            <nav class="text-center">
-                <button id="next_button" type="button" class="btn btn-primary" style="visibility: hidden;" @click="submit();">
-                    Next
-                </button>
-            </nav>
-   
+        <nav class="text-center">
+            <button id="next_button" type="button" class="btn btn-primary" style="visibility: hidden;" @click="submit();">
+                Get Plan
+            </button>
+        </nav>    
+
+       
     </div>
 
     `,
     methods: {
-        apiGet(method, query) {
-            return new Promise(function (resolve, reject) {
-                var otmAPI =
-                    "https://api.opentripmap.com/0.1/en/places/" +
-                    method +
-                    "?apikey=" +
-                    apiKey;
-                if (query !== undefined) {
-                    otmAPI += "&" + query;
-                }
-                fetch(otmAPI)
-                    .then(response => response.json())
-                    .then(data => resolve(data))
-                    .catch(function (err) {
-                        console.log("Fetch Error :-S", err);
-                    });
-            });
+        errorCityNotFound(message) {
+            console.log("error ", e);
+            document.getElementById("info").innerHTML = `<p>${message}</p>`;
         },
-        
-        
-        onShowPOI(data) {
-            let poi = document.getElementById("poi");
-            poi.innerHTML = "";
-            if (data.preview) {
-                poi.innerHTML += `<img src="${data.preview.source}">`;
+        findCode(name) {
+            var code = null;
+            cityCodes.forEach(item => {
+                if (item.cityLabel.toLowerCase() == name) {
+                    let idx = item.city.lastIndexOf("/");
+                    code = item.city.slice(idx+1);
+                }
+            });
+            return code;
+        },
+        submitForm() {
+            var module = this;
+            var name = document.getElementById("textbox").value;
+            var code = null;
+
+            if (name) {
+                code = this.findCode(name.toLowerCase());
+
+                if (code == null) {
+                    this.errorCityNotFound("City not found");
+                }
+                console.log(code);
+                var url = "https://query.wikidata.org/sparql";
+                
+                var query = `SELECT ?item ?itemLabel (SAMPLE(?coords) AS ?coords) (SAMPLE(?image) AS ?image) (SAMPLE(?label) AS ?label) ( COUNT( ?sitelink ) AS ?sitelink_count ) WHERE {
+                    ?item wdt:P131 wd:${code}.
+                    OPTIONAL { ?item wdt:P625 ?coords.}
+                    OPTIONAL { ?item wdt:P18 ?image. }
+                    SERVICE wikibase:label { bd:serviceParam wikibase:language "it". }
+                    OPTIONAL { ?item wdt:P7367 ?descrittore_di_contenuto. }
+                    { ?item wdt:P31 wd:Q33506.}UNION 
+                    { ?item wdt:P31 wd:Q174782.} UNION 
+                    {  ?item wdt:P31 wd:Q839954.} UNION 
+                    {  ?item wdt:P31 wd:Q16970.}
+                   
+                    ?item wdt:P31 ?descr .
+                    ?descr rdfs:label ?label .  FILTER( LANG(?label)="it" )
+                    ?sitelink schema:about ?item.
+                  } Group by ?item ?itemLabel `;
+
+                var queryUrl = url + "?query="+ query;
+                
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    cache: false,
+                    url: queryUrl,
+                    success: (data) =>{
+                        console.log(data);
+                        console.log(data.results.bindings[0]);
+                        module.data = data.results.bindings;
+                        // get the table element
+                        let count = data.results.bindings.length; 
+                        document.getElementById("info").innerHTML = `<p>${count} points of Interest found belonging to the following categories.\n 
+                                                    Uncheck those you are not interested in.</p>`;
+
+                        let list = document.getElementById("div_options");
+                        list.innerHTML = "";
+                        list.appendChild(module.createListItem(module, data.results.bindings));
+                    },
+                    error: function (e) {
+                        console.log("error ", e);
+                        document.getElementById("info").innerHTML = `<p>City not found</p>`;
+                    }
+                });
             }
-            poi.innerHTML += data.wikipedia_extracts
-                ? data.wikipedia_extracts.html
-                : data.info
-                    ? data.info.descr
-                    : "No description";
-        
-            poi.innerHTML += `<p><a target="_blank" href="${data.otm}">Show more at OpenTripMap</a></p>`;
+            else {
+                this.errorCityNotFound("Wrong input provided");
+            }
         },
 
+        
+        // add option for the number of days to the form
+        addOptions(form) {
+            form.innerHTML += `<br><br><label for="days" style="font-weight:600;">How many days are you going to stay?</label>
+            <input type="number" id="days" name="days" min="1" max="7"></input>`;
+
+            // set plan button visible
+            let nextBtn = document.getElementById("next_button");
+            nextBtn.style.visibility = "visible";
+            nextBtn.innerText = `Next`;
+        },
+
+      
         // create a checkbox list
-        createListItem(module,data) {
+        createListItem(module, data) {
+            console.log('create list' ,data);
             let div =  document.getElementById("div_options");
             let form = document.createElement("form");
             let inner_div = document.createElement("div");
@@ -93,7 +140,7 @@ export default {
             inner_div.id = "div_kinds";
 
             for (var item of data) {
-                let kind = getCategoryName(item.kinds);
+                let kind = item.label.value;
                 if (!insertedKinds.find(e => e == kind)) {
                     inner_div.innerHTML += `<input type="checkbox" id="${kind}" name="${kind}" value="${kind}" checked/><label for=${kind}>${kind}</label><br>`;
                     insertedKinds.push(kind);
@@ -103,58 +150,6 @@ export default {
             return form;
         },
         
-        // add options to the form
-        addOptions(form) {
-            form.innerHTML += `<br><br><label for="days" style="font-weight:600;">How many days are you going to stay?</label>
-            <input type="number" id="days" name="days" min="1" max="7"></input>`;
-        },
-
-        // load all type of places found in the area
-        loadKinds(module,lon, lat) {
-            this.apiGet(
-                "radius",
-                `radius=1000&limit=${pageLength}&offset=${offset}&lon=${lon}&lat=${lat}&rate=2&format=json`
-            ).then(function (data) {
-                let list = document.getElementById("div_options");
-                list.innerHTML = "";
-                list.appendChild(module.createListItem(module, data))
-           });
-        },
-
-        // load data from API
-        firstLoad(module,lon, lat) {
-            this.apiGet(
-                "radius",
-                `radius=1000&limit=${pageLength}&offset=${offset}&lon=${lon}&lat=${lat}&rate=2&format=count`
-            ).then(function (data) {
-                count = data.count;
-                offset = 0;
-                document.getElementById("info").innerHTML += `<p>${count} Point of Interest found in a 1km radius belonging to the following categories.\n 
-                Uncheck those you are not interested in.</p>`;
-                module.loadKinds(module,lon,lat);
-                
-                let nextBtn = document.getElementById("next_button");
-                nextBtn.style.visibility = "visible";
-                nextBtn.innerText = `Next`;
-            });
-        },
-
-        
-        submitForm() {
-            var module = this;
-            let name = document.getElementById("textbox").value;
-            this.apiGet("geoname", "name=" + name).then(function (data) {
-                let message = "Name not found";
-                if (data.status == "OK") {
-                    message = data.name + ", " + getCountryName(data.country);
-                    lon = data.lon;
-                    lat = data.lat;
-                    module.firstLoad(module,lon,lat);
-                }
-                document.getElementById("info").innerHTML = `<p>${message}</p>`;
-            });
-        },
-
         add_days(days) {
             for (var i = 0; i < days; i += 1) {
                 let div_day = $(`
@@ -166,13 +161,14 @@ export default {
             } 
         },
 
-        plan(data, days, checked) {
+        plan(days, checked) {
+ 
             // remove the places that are not checked
-            for (var i = 0; i < data.length; i += 1) {
-                let item = data[i];
-                let kind = getCategoryName(item.kinds);
+            for (var i = 0; i < this.data; i += 1) {
+                let item = this.data[i];
+                let kind = item.label.value;
                 if(!checked.includes(kind)) {
-                    data.splice(i, 1);
+                    this.data.splice(i, 1);
                     i -= 1;
                 }
             }
@@ -181,17 +177,21 @@ export default {
                 return this.pushStack( [].sort.apply( this, arguments ), []);  
             } 
             
+            // enties are evaluated with respect to their number of sitelinks
             function sortRate(a,b){  
-                if (a.rate == b.rate){
+                if (a.sitelink_count == b.sitelink_count){
                 return 0;
                 }
-                return a.rate > b.rate ? -1 : 1;  
+                return a.sitelink_count > b.sitelink_count ? -1 : 1;  
             }
             // select the best places for each day based on the rate
-            let sorted = $(data).sort(sortRate); 
+            let sorted = this.data.sort(sortRate); 
             let per_day = 5;
             let chosen = sorted.slice(0, days*per_day);
-
+            
+            console.log(chosen);
+            console.log('sorted', sorted);
+            console.log(checked);
             $("#div_display").empty();
 
             this.add_days(days);
@@ -201,46 +201,29 @@ export default {
 
                 let place = $(`
                     <div class="places">
-                        <p class="name_places" style="font-weight:bold"> ${item.name} </p>
-                        <p class="description"> ${getCategoryName(item.kinds)} </p>
+                        <p class="name_places" style="font-weight:bold"> ${item.itemLabel.value} </p>
+                        <p class="description"> ${item.label.value} </p>
                     </div>
                 `);
 
                 let index = Math.floor(i/per_day);
                 $(`#div_days_${index}`).append(place);
-            }
+            } 
 
         },
 
         submit() {
-            
             let days = document.getElementById("days").value;
-            let method = "radius";
-            let query = `radius=1000&limit=1000&offset=5&lon=${lon}&lat=${lat}&rate=2&format=json`
-            var url = "https://api.opentripmap.com/0.1/en/places/" + method + "?apikey=" + apiKey + "&" + query;
-            var module = this;
-
+           
             let checked = []
             var checkboxes = document.querySelectorAll('input[type=checkbox]:checked')
 
             for (var i = 0; i < checkboxes.length; i++) {
-            checked.push(checkboxes[i].value)
+                checked.push(checkboxes[i].value)
             }
             
-            console.log(checked);
-            $.ajax({
-                type: "GET",
-                dataType: "json",
-                cache: false,
-                url: url,
-                success: (data) =>{
-                    module.plan(data, days, checked);
-                },
-                error: function (e) {
-                    console.log("error in get story", e);
-                }
-            });
+            this.plan(days, checked);
         }
+
     }
 }
- 
