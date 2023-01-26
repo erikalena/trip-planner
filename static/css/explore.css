@@ -95,6 +95,8 @@ body {
 
 .places {
     padding: 1em;
+    border-bottom: solid;
+    border-width: thin;
 }
 
 .places >  p {
@@ -103,16 +105,19 @@ body {
 
 .div_days {
     padding: 1em;
-    background-color: #f7deca;
-    border-radius: 25px;
+    border-radius: 5px;
     margin: 1em;
+    background-color: #efeeec;
+
 }
+
 
 
 .list-group-item{
     background-color: #e6f2ff;
     color: #2b79e2;
     border-color: #95b0cc;
+    overflow: auto;
 }
 
 .list-group-item.active {
@@ -192,3 +197,93 @@ body {
 #jsonModal > img {
     padding: 10px;
 }
+
+#jsonModal > p {
+    float: left;
+}
+
+
+/* loading gif */
+#loading {
+    text-align: center;
+}
+#loading div {
+    background: url('../img/loading.gif') no-repeat center center;
+    margin: 0 auto;
+    padding: 10px;
+    position: relative;
+    /* overflow: auto; */
+    height: 80px;
+}
+
+#loading p {
+    margin-left: auto;
+    margin-right: auto;
+    width: 40%;
+    padding-top: 10px;
+    font-weight: 500;
+}
+
+/* login modal */
+
+
+/* Full-width input fields */
+#loginModal  input[type=text], input[type=password] {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+
+#loginModal  button[type=submit] {
+    background-color: #4CAF50;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 0.3rem;
+    margin-top: 2em;
+  }
+  
+
+
+  #downloadBtn, #saveBtn {
+    float: right;
+    margin-left: 20px;
+    color: white;
+    background-color: #5087c4;
+    border-color: #5087c4;
+  }
+
+  #div_content {
+    margin-top: 4em;
+  }
+
+
+  table {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 2rem;
+  }
+  
+  td, th {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+                  
+  th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    background-color: #134b5b;
+    color: white;
+  }
+
+  td {
+    background-color: #eaf4fd;
+    text-align: left;
+  }

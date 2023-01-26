@@ -3,16 +3,20 @@
 import homeComp from '/static/js/comp_home.js'
 import exploreComp from '/static/js/comp_explore.js'
 import planComp from '/static/js/comp_plan.js'
+import saveComp from '/static/js/comp_save.js'
 
 const Home = homeComp
 const Explore = exploreComp
 const Plan = planComp
+const Save = saveComp
+
 
 
 const routes = [
   { path: '/', component: Home },
   { path: '/explore', component: Explore },
   { path: '/plan', component: Plan },
+  { path: '/save', component: Save}
 ]
 
 // Create the router instance 

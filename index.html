@@ -30,8 +30,6 @@
 	<script type="module" src="static/js/routes.js"></script>
   <script src="static/js/directory.en.js"></script>
 
-
-
 </head>
 	<body>  
     <!-- top navbar --> 
@@ -61,8 +59,10 @@
                     <a class="nav-link" href="#">Plan</a>
                     </router-link> 
                 </li>
-                <li class="nav-item">
-                <a class="nav-link disabled" href="#">Saved</a>
+                <li class="nav-item" >
+                  <router-link  to="/save">
+                    <a class="nav-link" href="#" >Saved</a>
+                  </router-link> 
                 </li> 
             </ul>
             </div>
@@ -70,7 +70,15 @@
         <router-view></router-view>
     </div>
        
-   
+    
+  </div>
     
 	</body>
+  <script>
+    var logged = false;
+    var logged_user = null;
+
+    
+  </script>
+ 
 </html>

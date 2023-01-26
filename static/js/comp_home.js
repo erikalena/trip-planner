@@ -1,5 +1,5 @@
 export default {
-    name: 'main',
+    name: 'home',
     template: `
         <div id="div_descr">
           

@@ -1,33 +1,25 @@
-import { queryPoi } from '/static/js/queries.js';
 import cityCodes from '/static/data/cityCode.json' assert {type: 'json'};
 
 
-let lon; // place longitude
-let lat; // place latitude
-
-let offset = 0; // offset from first object in the list
-let count; // total objects count
-
-
-
 export default {
-    name: 'main',
+    name: 'explore',
     template: `
     <div id="div_display" class="container">
+    <p   style="font-weight: 600;"> Search for an Intalian city you are interested in and explore the point of interest you can visit during your future journey. </p>
         <form id="search_form" class="input-group mb-4 border p-1" >
             <div class="input-group-prepend border-0">
                 <button id="button-search" type="submit" class="btn btn-link ">
                     <i class="fa fa-search"></i>
                 </button>
             </div>
-            <input id="textbox"  type="search" placeholder="Region, city, village, etc. (e.g. Rome)"
+            <input id="textbox"  type="search" placeholder="Region, city, village, etc. (e.g. Roma)"
                 aria-describedby="button-search"
                 class="form-control bg-none border-0"
-                @change="submitForm"
+                @change="load();submitForm();"
             />
         </form>
-    
-        <div id="info" class="alert alert-primary"></div>
+        <div id="loading" style="visibility:hidden; height:0px"><p> Loading from Wikidata...</p><div></div></div>
+        <div id="info" class="alert alert-primary" style="visibility:hidden;"></div>
         <div class="row">
             <div class="col-12 ">
                 <div id="poi" class="alert" style="visibility: hidden;"></div>
@@ -64,6 +56,12 @@ export default {
             });
             return code;
         },
+        load()  {   
+            $("#loading").css("visibility", "visible");
+            $("#loading").css("height", "80px");
+            $("#info").css("visibility", "hidden");
+            $("#poi").css("visibility", "hidden");
+        },
         submitForm() {
             var module = this;
             var name = document.getElementById("textbox").value;
@@ -75,35 +73,45 @@ export default {
                 if (code == null) {
                     this.errorCityNotFound("City not found");
                 }
-                console.log(code);
+                
                 var url = "https://query.wikidata.org/sparql";
-                /* var query = `SELECT DISTINCT ?item ?itemLabel ?lat ?long WHERE {
-                    SERVICE wikibase:label { bd:serviceParam wikibase:language "it". }
-                    {
-                    SELECT ?item (SAMPLE(?lat) AS ?lati) (SAMPLE(?long) AS ?longi) WHERE {
-                        ?item p:P131 ?statement0.
-                        ?item wdt:P31/wdt:P279* wd:Q33506 . 
-                        ?statement0 (ps:P131/(wdt:P131*)) wd:${code}.
-                        ?item p:P625/psv:P625 [  wikibase:geoLatitude ?lat;   wikibase:geoLongitude ?long ] .
-                        
-                    } group by ?item
-                    }
-                }`; */
+            
                 var query = `SELECT ?item ?itemLabel (SAMPLE(?coords) AS ?coords) (SAMPLE(?image) AS ?image) (SAMPLE(?label) AS ?label) ( COUNT( ?sitelink ) AS ?sitelink_count ) WHERE {
                     ?item wdt:P131 wd:${code}.
                     OPTIONAL { ?item wdt:P625 ?coords.}
                     OPTIONAL { ?item wdt:P18 ?image. }
                     SERVICE wikibase:label { bd:serviceParam wikibase:language "it". }
-                    OPTIONAL { ?item wdt:P7367 ?descrittore_di_contenuto. }
-                    { ?item wdt:P31 wd:Q33506.}UNION 
-                    { ?item wdt:P31 wd:Q174782.} UNION 
-                    {  ?item wdt:P31 wd:Q839954.} UNION 
-                    {  ?item wdt:P31 wd:Q16970.}
+
+                    { 
+                        ?item wdt:P31 wd:Q33506. 
+                        wd:Q33506 rdfs:label ?label.
+                        FILTER((LANG(?label)) = "it")
+                    }
+                    UNION
+                    { 
+                        ?item wdt:P31 wd:Q174782. 
+                        wd:Q174782 rdfs:label ?label.
+                        FILTER((LANG(?label)) = "it")
+                    }
+                    UNION
+                    { 
+                        ?item wdt:P31 wd:Q839954. 
+                        wd:Q839954 rdfs:label ?label.
+                        FILTER((LANG(?label)) = "it")
+                    }
+                    UNION
+                    { 
+                        ?item wdt:P31 wd:Q16970.
+                        wd:Q16970 rdfs:label ?label.
+                        FILTER((LANG(?label)) = "it")
+                    }
                    
                     ?item wdt:P31 ?descr .
                     ?descr rdfs:label ?label .  FILTER( LANG(?label)="it" )
                     ?sitelink schema:about ?item.
-                  } Group by ?item ?itemLabel `;
+                  } 
+                  group by ?item ?itemLabel 
+                  order by desc(?sitelink_count)`;
                 var queryUrl = url + "?query="+ query;
                 
                 $.ajax({
@@ -112,7 +120,10 @@ export default {
                     cache: false,
                     url: queryUrl,
                     success: (data) =>{
-                        console.log(data);
+                        $("#loading").css("visibility", "hidden");
+                        $("#loading").css("height", "0px");
+                        $("#info").css("visibility", "visible");
+                        $("#poi").css("visibility", "visible");
                         console.log(data.results.bindings[0]);
                         // get the table element
                         let count = data.results.bindings.length; 
@@ -122,7 +133,7 @@ export default {
                         poi.style.visibility = "visible"; 
                         poi.innerHTML = "";
                         data.results.bindings.forEach(item => {
-                            module.loadList(module, item);
+                            module.loadList(module, item, name);
                         });
                     },
                     error: function (e) {
@@ -136,7 +147,7 @@ export default {
             }
         },
 
-        loadList(module, item) {
+        loadList(module, item, city) {
         
             let a = document.createElement("a");
             a.className = "list-group-item list-group-item-action";
@@ -155,7 +166,8 @@ export default {
             a.setAttribute("itemName", name);
 
             a.innerHTML = ` <h5 class="list-group-item-heading">${name}</h5>
-                <p class="list-group-item-text"> ${item.label.value}</p>`;
+                <p class="list-group-item-text" style="float:left;"> ${item.label.value}</p> 
+                <p class="list-group-item-text" style="float:right; font-weight: 300;"> Site links: ${item.sitelink_count.value}</p>`;
         
             a.addEventListener("click", function () {
                 document.querySelectorAll("#list a").forEach(function (item) {
@@ -163,13 +175,13 @@ export default {
                 });
                 this.classList.add("active");
                 
-                module.onShowPOI(module, id, name, image, uri);
+                module.onShowPOI(module, id, name, image, uri, city);
             });
 
             document.getElementById("poi").appendChild(a);
                     
         },
-        onShowPOI(module, id, name, img, uri) {
+        onShowPOI(module, id, name, img, uri, city) {
           
             let queryUrl = `https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=sitelinks&ids=${id}&sitefilter=itwiki`;
             //find title to search on wikipedia
@@ -198,7 +210,7 @@ export default {
                                     extract = "No extract found";
                                 }
 
-                                module.showModal(extract, img, uri);
+                                module.showModal(city, name, extract, img, uri);
                                             
                             }
                         }); 
@@ -207,7 +219,7 @@ export default {
             });
 
         },
-        showModal(extract, img, uri) {
+        showModal(city, poiTitle, extract, img, uri) {
             $("#showjsonModal").on("shown.bs.modal", function () {
                 $("#jsonModal").empty();
 
@@ -217,17 +229,30 @@ export default {
                 a.innerHTML = "View on Wikidata";
                 document.getElementById("jsonModal").appendChild(a);
 
+                //add title
+                let h4 = document.createElement("h4");
+                let cityName = city.charAt(0).toUpperCase() + city.slice(1);
+                h4.textContent = `POI in ${cityName}: ${poiTitle}`;
+                document.getElementById("jsonModal").appendChild(h4);
+
+                // add div
+                let div = document.createElement("div");
+                div.setAttribute("id", "modalContent");
+                document.getElementById("jsonModal").appendChild(div);
+
                 // add extract
                 let p = document.createElement("p");
                 p.innerHTML = extract;
-                document.getElementById("jsonModal").appendChild(p);
+                document.getElementById("modalContent").appendChild(p);
 
                 // add image if available
                 if (img) {
                     let imgTag = document.createElement("img");
                     imgTag.setAttribute("src", img);
-                    imgTag.setAttribute("width", "100%");
-                    document.getElementById("jsonModal").appendChild(imgTag);
+                    document.getElementById("modalContent").appendChild(imgTag);
+
+                    imgTag.style.width = "100%";
+    
                 }
                 
             });

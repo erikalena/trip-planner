@@ -1,41 +1,73 @@
 import cityCodes from '/static/data/cityCode.json' assert {type: 'json'};
+import {users} from '/static/js/config.js';
 
+var trip = {content: {}};
 
-var data ;
-var days ;
+var ndays = 0;
+var cityCode = null;
+var cityLabel = null;
+var perDay = 5; // number of poi per day
+var chosen = []; // array of chosen poi
 
 export default {
-    name: 'main',
+    name: 'plan',
     template: `
 
     <div id="div_display" class="container">
-    <p   style="font-weight: 600;"> Search for your place of interest, then you will be asked some really simple information to build your trip plan. </p>
-        <form id="search_form" class="input-group mb-4 border p-1" >
-            <div class="input-group-prepend border-0">
-                <button id="button-search" type="submit" class="btn btn-link ">
-                    <i class="fa fa-search"></i>
+    <a id = "downloadBtn" class="btn btn-primary" download="trip.json" href=""  @click="download();" style="visibility:hidden">Download</a>
+    <a id="saveBtn" type="button" class="btn btn-primary" @click="save();"  style="visibility:hidden" > Save  </a>
+    <div id="div_content" class="container">
+        <p   style="font-weight: 600;"> Search for your place of interest, then you will be asked some really simple information to build your trip plan. </p>
+            <form id="search_form" class="input-group mb-4 border p-1" >
+                <div class="input-group-prepend border-0">
+                    <button id="button-search" type="submit" class="btn btn-link ">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </div>
+                <input id="textbox"  type="search" placeholder="Region, city, village, etc. (e.g. Roma)"
+                    aria-describedby="button-search"
+                    class="form-control bg-none border-0"
+                    @change="load();submitForm();"
+                />
+            </form>
+
+
+            <div id="loading" style="visibility:hidden"><p> Loading from Wikidata...</p><div></div></div>
+
+            <div id="info" class="response"></div>
+            <div id="div_options" ></div>
+            
+            <nav class="text-center">
+                <button id="next_button" type="button" class="btn btn-primary" style="visibility: hidden;" @click="submit();">
+                    Get Plan
                 </button>
-            </div>
-            <input id="textbox"  type="search" placeholder="Region, city, village, etc. (e.g. Moscow)"
-                aria-describedby="button-search"
-                class="form-control bg-none border-0"
-                @change="submitForm"
-            />
-        </form>
-    
-        <div id="info" class="response"></div>
+            </nav>    
 
-        <div id="div_options" ></div>
-        
-        <nav class="text-center">
-            <button id="next_button" type="button" class="btn btn-primary" style="visibility: hidden;" @click="submit();">
-                Get Plan
-            </button>
-        </nav>    
-
-       
     </div>
+    
+    </div>
+        <!-- modal for login -->
+        <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                    <div class="modal-body" >
+                        <p id = "login_error" style="color:red"></p>
+                        <label for="uname"><b>Username</b></label>
+                        <input id= "username" type="text" placeholder="Enter Username" name="uname" required>
+                
+                        <label for="psw"><b>Password</b></label>
+                        <input id = "password" type="password" placeholder="Enter Password" name="psw" required>
+                        
+                        <button type="submit"  @click="login();">Login</button>
 
+                        <a href="/register">Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     `,
     methods: {
         errorCityNotFound(message) {
@@ -52,6 +84,9 @@ export default {
             });
             return code;
         },
+        load()  {   
+            document.getElementById("loading").style.visibility = "visible";
+        },
         submitForm() {
             var module = this;
             var name = document.getElementById("textbox").value;
@@ -59,28 +94,49 @@ export default {
 
             if (name) {
                 code = this.findCode(name.toLowerCase());
-
+                
                 if (code == null) {
                     this.errorCityNotFound("City not found");
+                    return;
                 }
-                console.log(code);
+                cityCode = code;
+                cityLabel = name;
                 var url = "https://query.wikidata.org/sparql";
                 
-                var query = `SELECT ?item ?itemLabel (SAMPLE(?coords) AS ?coords) (SAMPLE(?image) AS ?image) (SAMPLE(?label) AS ?label) ( COUNT( ?sitelink ) AS ?sitelink_count ) WHERE {
+                var query = `SELECT ?item ?itemLabel (SAMPLE(?coords) AS ?coords) (SAMPLE(?image) AS ?image) ?label ( COUNT( ?sitelink ) AS ?sitelink_count ) WHERE {
                     ?item wdt:P131 wd:${code}.
                     OPTIONAL { ?item wdt:P625 ?coords.}
                     OPTIONAL { ?item wdt:P18 ?image. }
                     SERVICE wikibase:label { bd:serviceParam wikibase:language "it". }
-                    OPTIONAL { ?item wdt:P7367 ?descrittore_di_contenuto. }
-                    { ?item wdt:P31 wd:Q33506.}UNION 
-                    { ?item wdt:P31 wd:Q174782.} UNION 
-                    {  ?item wdt:P31 wd:Q839954.} UNION 
-                    {  ?item wdt:P31 wd:Q16970.}
-                   
+
+                    { 
+                        ?item wdt:P31 wd:Q33506. 
+                        wd:Q33506 rdfs:label ?label.
+                        FILTER((LANG(?label)) = "it")
+                    }
+                    UNION
+                    { 
+                        ?item wdt:P31 wd:Q174782. 
+                        wd:Q174782 rdfs:label ?label.
+                        FILTER((LANG(?label)) = "it")
+                    }
+                    UNION
+                    { 
+                        ?item wdt:P31 wd:Q839954. 
+                        wd:Q839954 rdfs:label ?label.
+                        FILTER((LANG(?label)) = "it")
+                    }
+                    UNION
+                    { 
+                        ?item wdt:P31 wd:Q16970.
+                        wd:Q16970 rdfs:label ?label.
+                        FILTER((LANG(?label)) = "it")
+                    }
+                         
                     ?item wdt:P31 ?descr .
                     ?descr rdfs:label ?label .  FILTER( LANG(?label)="it" )
                     ?sitelink schema:about ?item.
-                  } Group by ?item ?itemLabel `;
+                  } Group by ?item ?itemLabel ?label`;
 
                 var queryUrl = url + "?query="+ query;
                 
@@ -90,7 +146,7 @@ export default {
                     cache: false,
                     url: queryUrl,
                     success: (data) =>{
-                        console.log(data);
+                        $('#loading').hide();
                         console.log(data.results.bindings[0]);
                         module.data = data.results.bindings;
                         // get the table element
@@ -101,6 +157,7 @@ export default {
                         let list = document.getElementById("div_options");
                         list.innerHTML = "";
                         list.appendChild(module.createListItem(module, data.results.bindings));
+
                     },
                     error: function (e) {
                         console.log("error ", e);
@@ -128,7 +185,6 @@ export default {
       
         // create a checkbox list
         createListItem(module, data) {
-            console.log('create list' ,data);
             let div =  document.getElementById("div_options");
             let form = document.createElement("form");
             let inner_div = document.createElement("div");
@@ -150,28 +206,29 @@ export default {
             return form;
         },
         
-        add_days(days) {
+        addDays(days) {
             for (var i = 0; i < days; i += 1) {
                 let div_day = $(`
                     <div class="div_days" id="div_days_${i}" >
                         <h2 class="div_days_title"> Day ${i+1} </h2>
                     </div>
                 `);
-                $("#div_display").append(div_day);
+                $("#div_content").append(div_day);
             } 
         },
 
         plan(days, checked) {
- 
-            // remove the places that are not checked
-            for (var i = 0; i < this.data; i += 1) {
+            
+            for (var i = 0; i < this.data.length; i += 1) {
                 let item = this.data[i];
                 let kind = item.label.value;
                 if(!checked.includes(kind)) {
+                    console.log("removed: ", item);
                     this.data.splice(i, 1);
                     i -= 1;
                 }
             }
+
 
             jQuery.fn.sort = function() {  
                 return this.pushStack( [].sort.apply( this, arguments ), []);  
@@ -186,17 +243,21 @@ export default {
             }
             // select the best places for each day based on the rate
             let sorted = this.data.sort(sortRate); 
-            let per_day = 5;
-            let chosen = sorted.slice(0, days*per_day);
             
-            console.log(chosen);
-            console.log('sorted', sorted);
-            console.log(checked);
-            $("#div_display").empty();
+            chosen = sorted.slice(0, days*perDay);
+            chosen.forEach(function(item, index) {
+                item["day"] = Math.floor(index/perDay) + 1;
+            });
+            
+            $("#downloadBtn").css("visibility", "visible");
+            $("#saveBtn").css("visibility", "visible");
+            $("#div_content").empty();
 
-            this.add_days(days);
 
-            for (var i = 0; i < days*per_day; i += 1) {
+            ndays = days;
+            this.addDays(days);
+
+            for (var i = 0; i < days*perDay; i += 1) {
                 let item = chosen[i];          
 
                 let place = $(`
@@ -206,10 +267,14 @@ export default {
                     </div>
                 `);
 
-                let index = Math.floor(i/per_day);
+                let index = Math.floor(i/perDay);
                 $(`#div_days_${index}`).append(place);
             } 
 
+            trip.content['days'] = ndays;
+            trip.content['places'] = chosen;
+            trip.content['cityCode'] = cityCode;
+            trip.content['cityLabel'] = cityLabel;
         },
 
         submit() {
@@ -223,6 +288,79 @@ export default {
             }
             
             this.plan(days, checked);
+        },
+        
+        download() {
+            let a = document.getElementById("downloadBtn");
+            let content = JSON.stringify(trip);
+            a.setAttribute('href', "data:application/json," + encodeURIComponent(content));
+        },
+        
+        save() {
+            console.log("save");
+            if (!logged) {
+                console.log("not logged");
+                document.getElementById("login_error").innerHTML = "";
+                $('#loginModal').modal('toggle');
+            }
+            else {
+                this.saveTrip();
+            }
+        },
+
+        login() {
+            var module = this;
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            users.forEach(function(item) {
+                if (username == item.username && password == item.password) {
+                    logged = true;
+                    logged_user = username;
+                    module.saveTrip();
+                    $('#loginModal').modal('toggle');
+                }
+                else {
+                    document.getElementById("login_error").innerHTML = `Wrong username or password`;
+                    document.getElementById("username").value = "";
+                    document.getElementById("password").value = "";
+                }
+            });
+            
+        },
+        saveTrip() {
+            trip.content['logged_user'] = logged_user;
+            console.log(trip);
+            $.ajax({
+                type: "POST",
+                url: "/saveTrip",
+                data: trip,
+                cache: false,
+                success: function (data) {
+                    console.log("success ", data);
+                    alert("Trip plan correctly saved")
+                },
+                error: function (e) {
+                    console.log("error ", e);
+                    alert("trip not saved");
+                }
+            });
+        },
+        test() {
+            $.ajax({
+                type: "GET",
+                url: "/tables",
+                data: null,
+                cache: false,
+                success: function () {
+                    console.log("success ");
+                    
+                },
+                error: function (e) {
+                    console.log("error ", e);
+                    alert("trip not saved");
+                }
+            });
         }
 
     }
