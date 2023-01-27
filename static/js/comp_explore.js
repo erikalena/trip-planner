@@ -43,7 +43,10 @@ export default {
     `,
     methods: {
         errorCityNotFound(message) {
-            console.log("error ", e);
+            $("#loading").css("visibility", "hidden");
+            $("#loading").css("height", "0px");
+            $("#info").css("visibility", "visible");
+            $("#poi").css("visibility", "hidden");
             document.getElementById("info").innerHTML = `<p>${message}</p>`;
         },
         findCode(name) {
@@ -72,6 +75,7 @@ export default {
 
                 if (code == null) {
                     this.errorCityNotFound("City not found");
+                    return;
                 }
                 
                 var url = "https://query.wikidata.org/sparql";
@@ -124,7 +128,6 @@ export default {
                         $("#loading").css("height", "0px");
                         $("#info").css("visibility", "visible");
                         $("#poi").css("visibility", "visible");
-                        console.log(data.results.bindings[0]);
                         // get the table element
                         let count = data.results.bindings.length; 
                         document.getElementById("info").innerHTML = `<p>${count} points of interest found</p>`;
@@ -191,8 +194,8 @@ export default {
                 cache: false,
                 url: queryUrl,
                 success: (data) =>{
-                    let title = data.entities[Object.keys(data.entities)[0]].sitelinks.itwiki.title;
-                    if (title)  {
+                    if (data.entities[Object.keys(data.entities)[0]].sitelinks.itwiki)  {
+                        let title = data.entities[Object.keys(data.entities)[0]].sitelinks.itwiki.title;
                         let url = "https://it.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1";
                         let queryUrl = url + "&titles=" + title ;
                         $.ajax({
@@ -201,7 +204,6 @@ export default {
                             cache: false,
                             url: queryUrl,
                             success: (data) =>{
-                                console.log(data);
                                 let extract = '';
                                 if (Object.keys(data.query.pages)[0] != "-1") { // extract found
                                     extract = data.query.pages[Object.keys(data.query.pages)[0]].extract;
@@ -214,6 +216,10 @@ export default {
                                             
                             }
                         }); 
+                    }
+                    else {
+                        let extract = "No extract found";
+                        module.showModal(city, name, extract, img, uri);
                     }
                 }
             });
@@ -243,6 +249,7 @@ export default {
                 // add extract
                 let p = document.createElement("p");
                 p.innerHTML = extract;
+                
                 document.getElementById("modalContent").appendChild(p);
 
                 // add image if available

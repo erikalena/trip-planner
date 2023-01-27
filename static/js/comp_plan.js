@@ -55,12 +55,13 @@ export default {
                     </div>
                     <div class="modal-body" >
                         <p id = "login_error" style="color:red"></p>
+                        <form>
                         <label for="uname"><b>Username</b></label>
                         <input id= "username" type="text" placeholder="Enter Username" name="uname" required>
-                
+
                         <label for="psw"><b>Password</b></label>
                         <input id = "password" type="password" placeholder="Enter Password" name="psw" required>
-                        
+                        </form>
                         <button type="submit"  @click="login();">Login</button>
 
                         <a href="/register">Register</a>
@@ -71,7 +72,10 @@ export default {
     `,
     methods: {
         errorCityNotFound(message) {
-            console.log("error ", e);
+            $("#loading").css("visibility", "hidden");
+            $("#loading").css("height", "0px");
+            $("#info").css("visibility", "visible");
+            $("#poi").css("visibility", "hidden");
             document.getElementById("info").innerHTML = `<p>${message}</p>`;
         },
         findCode(name) {
@@ -223,7 +227,6 @@ export default {
                 let item = this.data[i];
                 let kind = item.label.value;
                 if(!checked.includes(kind)) {
-                    console.log("removed: ", item);
                     this.data.splice(i, 1);
                     i -= 1;
                 }
@@ -262,7 +265,7 @@ export default {
 
                 let place = $(`
                     <div class="places">
-                        <p class="name_places" style="font-weight:bold"> ${item.itemLabel.value} </p>
+                        <a class="name_places" style="font-weight:bold" href="${item.item.value}" > ${item.itemLabel.value} </a>
                         <p class="description"> ${item.label.value} </p>
                     </div>
                 `);
@@ -297,9 +300,7 @@ export default {
         },
         
         save() {
-            console.log("save");
             if (!logged) {
-                console.log("not logged");
                 document.getElementById("login_error").innerHTML = "";
                 $('#loginModal').modal('toggle');
             }
@@ -330,31 +331,14 @@ export default {
         },
         saveTrip() {
             trip.content['logged_user'] = logged_user;
-            console.log(trip);
+          
             $.ajax({
                 type: "POST",
                 url: "/saveTrip",
                 data: trip,
                 cache: false,
                 success: function (data) {
-                    console.log("success ", data);
                     alert("Trip plan correctly saved")
-                },
-                error: function (e) {
-                    console.log("error ", e);
-                    alert("trip not saved");
-                }
-            });
-        },
-        test() {
-            $.ajax({
-                type: "GET",
-                url: "/tables",
-                data: null,
-                cache: false,
-                success: function () {
-                    console.log("success ");
-                    
                 },
                 error: function (e) {
                     console.log("error ", e);

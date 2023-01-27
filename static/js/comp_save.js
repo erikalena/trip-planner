@@ -62,16 +62,16 @@ export default {
             $.get( `/visitTables/${logged_user}`, function( data ) {
                 if(data.length > 0) {
                     let trip = [];
-                    let n = 1;
-                    let i = 0;
-                    let end = 0;
+                    let n = data[0].Trip; // index of first trip for this user
+                    let i = 0; // current index
+                    let end = 0; // index of last elem of previous trip 
                     while (i < data.length) {
                         if (data[i].Trip == n) {
                             trip[i-end] = data[i];
                             i++;
                         }
                         else {
-                            n++;
+                            n = data[i+1].Trip;
                             end = i;
                             module.createTable(trip);
                             trip = [];
