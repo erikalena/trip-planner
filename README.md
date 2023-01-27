@@ -1,6 +1,6 @@
 # Trip Planner
 
-A cloud based environment to plan which Points of Interest (POI) visit during your trip.
+A cloud based environment to plan which Points of Interest (POI) to visit during your trip.
 
 Data are queried from Wikidata using SPARQL, in particular: museums, archaelogical sites, roads/squares and churches are selected.
 The user then can further customize this choice and the POI are ordered and selected with respect to the number of site links they have.
