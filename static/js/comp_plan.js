@@ -18,7 +18,7 @@ export default {
     <a id="saveBtn" type="button" class="btn btn-primary" @click="save();"  style="visibility:hidden" > Save  </a>
     <div id="div_content" class="container">
         <p   style="font-weight: 600;"> Search for your place of interest, then you will be asked some really simple information to build your trip plan. </p>
-            <form id="search_form" class="input-group mb-4 border p-1" >
+            <div id="search_form" class="input-group mb-4 border p-1" >
                 <div class="input-group-prepend border-0">
                     <button id="button-search" type="submit" class="btn btn-link ">
                         <i class="fa fa-search"></i>
@@ -27,9 +27,9 @@ export default {
                 <input id="textbox"  type="search" placeholder="Region, city, village, etc. (e.g. Roma)"
                     aria-describedby="button-search"
                     class="form-control bg-none border-0"
-                    @change="load();submitForm();"
+                    @change="submitForm();"
                 />
-            </form>
+            </div>
 
 
             <div id="loading" style="visibility:hidden"><p> Loading from Wikidata...</p><div></div></div>
@@ -92,6 +92,7 @@ export default {
             document.getElementById("loading").style.visibility = "visible";
         },
         submitForm() {
+            this.load();
             var module = this;
             var name = document.getElementById("textbox").value;
             var code = null;
@@ -311,8 +312,8 @@ export default {
 
         login() {
             var module = this;
-            let username = document.getElementById("username").value;
-            let password = document.getElementById("password").value;
+            let username = document.getElementById("username").value.trim();
+            let password = document.getElementById("password").value.trim();
 
             users.forEach(function(item) {
                 if (username == item.username && password == item.password) {

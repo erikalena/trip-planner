@@ -1,12 +1,11 @@
 import cityCodes from '/static/data/cityCode.json' assert {type: 'json'};
 
-
 export default {
     name: 'explore',
     template: `
     <div id="div_display" class="container">
     <p   style="font-weight: 600;"> Search for an Intalian city you are interested in and explore the point of interest you can visit during your future journey. </p>
-        <form id="search_form" class="input-group mb-4 border p-1" >
+        <div id="search_form" class="input-group mb-4 border p-1" >
             <div class="input-group-prepend border-0">
                 <button id="button-search" type="submit" class="btn btn-link ">
                     <i class="fa fa-search"></i>
@@ -15,9 +14,9 @@ export default {
             <input id="textbox"  type="search" placeholder="Region, city, village, etc. (e.g. Roma)"
                 aria-describedby="button-search"
                 class="form-control bg-none border-0"
-                @change="load();submitForm();"
+                @change="submitForm"
             />
-        </form>
+        </div>
         <div id="loading" style="visibility:hidden; height:0px"><p> Loading from Wikidata...</p><div></div></div>
         <div id="info" class="alert alert-primary" style="visibility:hidden;"></div>
         <div class="row">
@@ -66,6 +65,8 @@ export default {
             $("#poi").css("visibility", "hidden");
         },
         submitForm() {
+            console.log("submitForm");
+            this.load();
             var module = this;
             var name = document.getElementById("textbox").value;
             var code = null;
@@ -147,7 +148,7 @@ export default {
             }
             else {
                 this.errorCityNotFound("Wrong input provided");
-            }
+            } 
         },
 
         loadList(module, item, city) {
@@ -185,7 +186,7 @@ export default {
                     
         },
         onShowPOI(module, id, name, img, uri, city) {
-          
+            console.log("onShowPOI", id);
             let queryUrl = `https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=sitelinks&ids=${id}&sitefilter=itwiki`;
             //find title to search on wikipedia
             $.ajax({
@@ -207,13 +208,12 @@ export default {
                                 let extract = '';
                                 if (Object.keys(data.query.pages)[0] != "-1") { // extract found
                                     extract = data.query.pages[Object.keys(data.query.pages)[0]].extract;
+                                    module.showModal(city, name, extract, img, uri);
                                 }
                                 else {
                                     extract = "No extract found";
+                                    module.showModal(city, name, extract, img, uri);
                                 }
-
-                                module.showModal(city, name, extract, img, uri);
-                                            
                             }
                         }); 
                     }
@@ -221,6 +221,11 @@ export default {
                         let extract = "No extract found";
                         module.showModal(city, name, extract, img, uri);
                     }
+                },
+                error: function (e) {
+                    console.log("error ", e);
+                    let extract = "No extract found";
+                    module.showModal(city, name, extract, img, uri);
                 }
             });
 
@@ -264,9 +269,8 @@ export default {
                 
             });
         }
+        
     }
-
-  
     
 }
  

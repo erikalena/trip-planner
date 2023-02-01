@@ -38,8 +38,8 @@ export default {
     methods: {
         login() {
             var module = this;
-            let username = document.getElementById("username").value;
-            let password = document.getElementById("password").value;
+            let username = document.getElementById("username").value.trim();
+            let password = document.getElementById("password").value.trim();
 
             users.forEach(function(item) {
                 if (username == item.username && password == item.password) {

@@ -1,10 +1,16 @@
-export const queryPoi = `
 
-     ?poi dbo:location ?city. 
+const dbpediaQuery = `
+
+    select ?poi (max(?name) as ?Name) ?typeName  (sample(?img ) as ?Image) ?lat ?long
+
+    where {
+        VALUES ?city {<http://dbpedia.org/resource/Bologna>} 
+        ?poi dbo:location ?city. 
 
 
     optional
     {
+    
     ?poi a ?type.
     VALUES ?type {dbo:Museum}
     BIND( "Museum" as ?typeName )
@@ -49,4 +55,5 @@ export const queryPoi = `
     }
 
 }
-`
+`;
+
